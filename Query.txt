@@ -1,0 +1,109 @@
+
+-- Create the ecommerce database
+CREATE DATABASE ecommerce;
+
+-- Create the customers table to store customer details
+CREATE TABLE customers (
+  Id INT AUTO_INCREMENT PRIMARY KEY, -- Unique identifier for each customer
+  Name VARCHAR(255) NOT NULL,        -- Customer's name
+  Email VARCHAR(255) UNIQUE NOT NULL, -- Customer's email address (must be unique)
+  Address VARCHAR(255) NOT NULL      -- Customer's address
+);
+
+-- Create the orders table to store order details
+CREATE TABLE orders (
+  Id INT AUTO_INCREMENT PRIMARY KEY, -- Unique identifier for each order
+  Customer_Id INT NOT NULL,          -- Reference to the customer who placed the order
+  Order_date DATE NOT NULL,          -- Date the order was placed
+  Total DECIMAL(10,2) NOT NULL,      -- Total amount of the order
+  FOREIGN KEY (Customer_Id) REFERENCES customers(Id) -- Foreign key linking to the customers table
+);
+
+-- Create the products table to store product details
+CREATE TABLE products (
+  Id INT AUTO_INCREMENT PRIMARY KEY, -- Unique identifier for each product
+  Name VARCHAR(255) NOT NULL,        -- Product name
+  Price DECIMAL(10,2) NOT NULL,      -- Product price
+  Description TEXT                   -- Description of the product
+);
+
+-- Insert sample data into the customers table
+INSERT INTO customers(Name, Email, Address) VALUES
+('Nagarajan', 'nagarajan1938@gmail.com', '2A Ponmalai'),
+('Venkatesan', 'venkatesan1966@gmail.com', '4B Trichy'),
+('Srinivasan', 'srinivasan1970@gmail.com', '6C Bharathisalai'),
+('Sanjay', 'sanjay2002@gmail.com', '8D Goa'),
+('Kalai', 'kalai2003@gmail.com', '10F Chennai');
+
+-- Insert sample data into the products table
+INSERT INTO products(Name, Price, Description) VALUES
+('Product A', 30.00, 'Description of Product A'),
+('Product B', 40.00, 'Description of Product B'),
+('Product C', 50.00, 'Description of Product C'),
+('Product D', 60.00, 'Description of Product D'),
+('Product E', 70.00, 'Description of Product E');
+
+-- Queries to fulfill the task requirements
+
+-- 1. Retrieve all customers who have placed an order in the last 30 days
+SELECT DISTINCT customers.Name, customers.Email
+FROM customers
+JOIN orders ON customers.Id = orders.Customer_Id
+WHERE orders.Order_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY);
+
+-- 2. Get the total amount of all orders placed by each customer
+SELECT customers.Name, SUM(orders.Total) AS Total_Amount
+FROM customers
+JOIN orders ON customers.Id = orders.Customer_Id
+GROUP BY customers.Name;
+
+-- 3. Update the price of Product C to 45.00
+UPDATE products
+SET Price = 45.00
+WHERE Name = 'Product C';
+
+-- 4. Add a new column discount to the products table
+ALTER TABLE products
+ADD COLUMN Discount DECIMAL(10,2) DEFAULT 0.00;
+
+-- 5. Retrieve the top 3 products with the highest price
+SELECT Name, Price
+FROM products
+ORDER BY Price DESC
+LIMIT 3;
+
+-- 6. Get the names of customers who have ordered Product A
+SELECT DISTINCT customers.Name
+FROM customers
+JOIN orders ON customers.Id = orders.Customer_Id
+JOIN order_items ON orders.Id = order_items.Order_Id
+JOIN products ON order_items.Product_Id = products.Id
+WHERE products.Name = 'Product A';
+
+-- 7. Join the orders and customers tables to retrieve the customer's name and order date for each order
+SELECT customers.Name AS Customer_Name, orders.Order_date AS Order_Date
+FROM customers
+JOIN orders ON customers.Id = orders.Customer_Id;
+
+-- 8. Retrieve the orders with a total amount greater than 150.00
+SELECT *
+FROM orders
+WHERE Total > 150.00;
+
+-- 9. Normalize the database by creating a separate table for order items and updating the orders table to reference the order_items table
+CREATE TABLE order_items (
+  Id INT AUTO_INCREMENT PRIMARY KEY, -- Unique identifier for each order item
+  Order_Id INT NOT NULL,             -- Reference to the order
+  Product_Id INT NOT NULL,           -- Reference to the product
+  Quantity INT NOT NULL,             -- Quantity of the product in the order
+  FOREIGN KEY (Order_Id) REFERENCES orders(Id),
+  FOREIGN KEY (Product_Id) REFERENCES products(Id)
+);
+
+-- Remove the product reference from the orders table as it's now handled by order_items
+ALTER TABLE orders
+DROP COLUMN Total;
+
+-- 10. Retrieve the average total of all orders
+SELECT AVG(Total) AS Average_Order_Total
+FROM orders;
